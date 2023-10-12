@@ -1,0 +1,23 @@
+{
+  "name": "crud-basico",
+  "version": "1.0.0",
+  "description": "Un crud básico hecho con NodeJS y el framework Express, y una base de datos de MySQL",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npx nodemon ./src/index.js",
+    "start": "node ./src/index.js"
+  },
+  "author": "David Cornejo B <luisdavidcorbra24@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-handlebars": "^7.1.2",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.6.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
