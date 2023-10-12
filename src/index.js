@@ -3,7 +3,7 @@ import morgan from "morgan";
 import { engine } from "express-handlebars";
 import { join, dirname } from 'path';
 import { fileURLToPath } from "url";
-import personasRoutes from '../src/routes/personas.route.js';
+import personasRoutes from './routes/personas.route.js';
 
 // Initializations:
 const app = express();
