@@ -368,7 +368,7 @@ export default pool;
 
   Aquí tenemos una condicional ```{{#if personas}}```, con la cual, si tenemos datos en "personas" recibidos desde ```personas.route.js``` mostramos la tabla de las personas; en el caso de que no haya datos en "personas", mostramos un ```<div>``` con un mensaje de que "Se deben crear personas", seguido de un botón que nos enviará al formulario de creación de personas. En el caso de que si tengamos datos de personas en "personas" se hace un ```{{#each personas}}``` con el cual, para cada persona en "personas" se renderiza una fila de la tabla con la información de dicha persona. En el caso de que "personas" tenga 3 personas almacenadas, éste ```{{#each personas}}``` renderizará 3 filas de la tabla, una para cada persona.
 
-#### Añadir persona (vista):
+#### Añadir persona:
 
 - En ```personas.route.js``` creamos un endpoint que redireccione al usuario hacia la vista del formulario para añadir personas. En éste endpoint no se realiza ningún query a la base de datos puesto que solo es para redireccionar al usuario a otra vista:
 
@@ -432,6 +432,111 @@ export default pool;
         res.status(500).json({message: error.message});
     }
   });
+  ```
+
+#### Editar una persona mediante su id:
+
+- En ```personas.route.js``` creamos el siguiente endpoint:
+
+  ```js
+  router.get('/edit/:id', async(req, res) => {
+    try {
+        const {id} = req.params; // GUARDAMOS LA ID RECIBIDA COMO QUERY PARAM EN UNA CONSTANTE
+        const [persona] = await pool.query("SELECT * FROM persona WHERE id = ?", [id]); // HACEMOS UN "SELECT" A LA BASE DE DATOS, CON LA ID RECIBIDA. ALMACENAMOS LA RESPUESTA EN UNA CONSTANTE
+        const personaEdit = persona[0];
+        res.render('personas/edit', {persona: personaEdit}); // RENDERIZAMOS LA VISTA DE EDICIÓN DE PERSONA, ENVIÁNDOLE LA CONSTANTE CON TODOS LOS DATOS DE LA PERSONA A EDITAR
+    } catch (error) {
+        res.status(500).json({message: error.message});
+
+    }
+  });
+  ```
+
+  - En ```views/personas``` creamos el archivo ```edit.hbs``` con la siguiente estructura:
+
+    ```hbs
+    <div class="container p-4">
+      <div class="row">
+          <div class="col-md-4 mx-auto">
+              <div class="card text-center">
+                  <div class="card-header">
+                      <h3 class="text-uppercase">EDITAR PERSONA</h3>
+                  </div>
+                  <div class="card-body"></div>
+                  <form action="/edit/{{persona.id}}" method="post">
+                  <div class="input-group mt-2">
+                      <label class="input-group-text" for="name">Nombres</label>
+                      <input class="form-control" type="text" name="name" id="name" value="{{persona.name}}" placeholder="Ejemplo: Luis David" autofocus required>
+                  </div>
+                  <div class="input-group mt-2">
+                      <label class="input-group-text" for="lastname">Apellidos</label>
+                      <input class="form-control" type="text" name="lastname" id="lastname" value="{{persona.lastname}}" placeholder="Ejemplo: Cornejo Bravo" required>
+                  </div>
+                  <div class="input-group mt-2">
+                      <label class="input-group-text" for="age">Edad</label>
+                      <input class="form-control" type="number" name="age" id="age" value="{{persona.age}}" required>
+                  </div>
+                  <div class="form-group mt-4 d-grid gap-2">
+                      <button class="btn btn-success">Actualizar</button>
+                  </div>
+                  </form>
+              </div>
+          </div>
+      </div>
+    </div>
+    ```
+
+    Se trata básicamente de un formulario igual al de "add", en el que cambia únicamente la configuración del ```<form>``` de la siguiente manera: ```<form action="/edit/{{persona.id}}" method="post">``` lo que significa que, al dar click en el botón "Actualizar" de éste formulario, se llamará al endpoint "post" de "/edit/:id", en donde "id" corresponde al id de la persona cuyos datos han sido editados.
+
+- Creamos el endpoint en ```personas.route.js``` que actualizará los datos de la persona en la base de datos:
+
+  ```js
+  router.post('/edit/:id', async(req, res) => {
+    try {
+        const {name, lastname, age} = req.body; // RECIBIMOS EN EL BODY DESDE EL FORMULARIO DE EDITAR, TODOS LOS DATOS DE PERSONA, INCLUYENDO OBVIAMENTE LOS EDITADOS
+        const {id} = req.params; // GUARDAMOS EN UNA CONSTANTE LA ID DE LA PERSONA EDITADA, RECIBIDA COMO QUERY PARAM
+        const editPersona = {name, lastname, age}; // CREAMOS UN NUEVO OBJETO CON LOS NUEVOS DATOS
+        await pool.query("UPDATE persona SET ? WHERE id = ?", [editPersona, id]); // HACEMOS UN "UPDATE" EN LA BASE DE DATOS, CON LOS DATOS ACTUALIZADOS Y LA ID DE LA PERSONA A ACTUALIZAR
+        res.redirect('/list'); // REDIRECCIONAMOS A LA VISTA DE LISTA DE PERSONAS
+    } catch (error) {
+        res.status(500).json({message: error.message});
+
+    }
+  });
+  ```
+
+#### Eliminar personas por su id:
+
+- En ```personas.route.js``` creamos el endpoint que eliminará de la base de datos una persona por su id, que será recibida como query param:
+  ```js
+  router.get('/delete/:id', async(req, res) => {
+    try {
+        const {id} = req.params; // ALMACENAMOS EN UNA CONSTANTE LA ID RECIBIDA COMO QUERY PARAM
+        await pool.query("DELETE FROM persona WHERE id = ?", [id]); // HACEMOS UN "DELETE FROM" EN LA BASE DE DATOS, CON LA ID RECIBIDA
+        res.redirect('/list'); // NUEVAMENTE RENDERIZAMOS LA LISTA DE PERSONAS, PARA QUE ÉSTA SE ACTUALICE Y YA NO MUESTRE A LA PERSONA ELIMINADA.
+    } catch (error) {
+        res.status(500).json({message: error.message});
+    }
+  });
+  ```
+
+  Cabe mencionar que tanto éste endpoint, como el endpoint de "actualizar", son invocados desde los botones de "actualizar" y "aliminar" renderizados en la vista ```list.hbs``` para cada persona. Los botones están configurados de la siguiente manera:
+
+  ```hbs
+  ...
+  ...
+  <td>
+    <div class="btn-group">
+      <a href="/edit/{{id}}" class="btn btn-warning">
+        <i class="fa-regular fa-pen-to-square"></i>
+      </a>
+      <a href="/delete/{{id}}" class="btn btn-danger">
+        <i class="fa-solid fa-trash"></i>
+      </a>
+    </div>
+  </td>
+  ...
+  ...
   ```
 
 
